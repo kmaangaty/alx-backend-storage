@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
-""" Log stats - new version """
+"""nginx_logs_stats.py: Provides statistics about Nginx logs stored in MongoDB."""
+
 from pymongo import MongoClient
 
 
-def nginx_stats_check():
-    """ provides some stats about Nginx logs stored in MongoDB:"""
+def nginx_logs_stats():
+    """Provides statistics about Nginx logs stored in MongoDB."""
     client = MongoClient()
     collection = client.logs.nginx
 
-    num_of_docs = collection.count_documents({})
-    print("{} logs".format(num_of_docs))
+    num_of_logs = collection.count_documents({})
+    print(f"{num_of_logs} logs")
     print("Methods:")
-    methods_list = ["GET", "POST", "PUT", "PATCH", "DELETE"]
-    for method in methods_list:
+    methods = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    for method in methods:
         method_count = collection.count_documents({"method": method})
-        print("\tmethod {}: {}".format(method, method_count))
-    status = collection.count_documents({"method": "GET", "path": "/status"})
-    print("{} status check".format(status))
+        print(f"\tmethod {method}: {method_count}")
+
+    status_checks = collection.count_documents({"method": "GET", "path": "/status"})
+    print(f"{status_checks} status check")
 
     print("IPs:")
-
-    top_IPs = collection.aggregate([
+    top_ips = collection.aggregate([
         {"$group":
          {
              "_id": "$ip",
@@ -35,11 +36,10 @@ def nginx_stats_check():
             "count": 1
         }}
     ])
-    for top_ip in top_IPs:
+    for top_ip in top_ips:
         count = top_ip.get("count")
         ip_address = top_ip.get("ip")
-        print("\t{}: {}".format(ip_address, count))
-
+        print(f"\t{ip_address}: {count}")
 
 if __name__ == "__main__":
-    nginx_stats_check()
+    nginx_logs_stats()
