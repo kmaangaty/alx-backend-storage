@@ -6,7 +6,6 @@ import requests
 import redis
 from functools import wraps
 
-# Redis connection
 redis_conn = redis.Redis()
 
 
