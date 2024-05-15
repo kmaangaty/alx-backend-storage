@@ -25,36 +25,36 @@ def call_history(method: Callable) -> Callable:
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         """Wrapper function to store input and output history."""
-        input_data = str(args)
-        self._redis.rpush(method.__qualname__ + ":inputs", input_data)
-        output_data = str(method(self, *args, **kwargs))
-        self._redis.rpush(method.__qualname__ + ":outputs", output_data)
-        return output_data
+        ips = str(args)
+        self._redis.rpush(method.__qualname__ + ":inputs", ips)
+        pts = str(method(self, *args, **kwargs))
+        self._redis.rpush(method.__qualname__ + ":outputs", pts)
+        return pts
     return wrapper
 
 
 def replay(fn: Callable):
     """Function to display the history of calls of a particular function."""
     r = redis.Redis()
-    func_name = fn.__qualname__
-    c = r.get(func_name)
+    fcn = fn.__qualname__
+    c = r.get(fcn)
     try:
         c = int(c.decode("utf-8"))
-    except Exception:
+    except Exception as e:
         c = 0
-    print("{} was called {} times:".format(func_name, c))
-    inputs = r.lrange("{}:inputs".format(func_name), 0, -1)
-    outputs = r.lrange("{}:outputs".format(func_name), 0, -1)
-    for inp, outp in zip(inputs, outputs):
+    print("{} was called {} times:".format(fcn, c))
+    ips = r.lrange("{}:inputs".format(fcn), 0, -1)
+    pts = r.lrange("{}:outputs".format(fcn), 0, -1)
+    for inp, otp in zip(ips, pts):
         try:
             inp = inp.decode("utf-8")
         except Exception:
             inp = ""
         try:
-            outp = outp.decode("utf-8")
+            otp = otp.decode("utf-8")
         except Exception:
-            outp = ""
-        print("{}(*{}) -> {}".format(func_name, inp, outp))
+            otp = ""
+        print("{}(*{}) -> {}".format(fcn, inp, otp))
 
 
 class Cache:
@@ -68,17 +68,17 @@ class Cache:
     @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """Method to store data in Redis and return the generated key."""
-        rkey = str(uuid4())
-        self._redis.set(rkey, data)
-        return rkey
+        k = str(uuid4())
+        self._redis.set(k, data)
+        return k
 
-    def get(self, key: str,
+    def get(self, ek: str,
             fn: Optional[Callable] = None) -> Union[str, bytes, int, float]:
         """Method to retrieve data from Redis and optionally convert it."""
-        value = self._redis.get(key)
+        v = self._redis.get(ek)
         if fn:
-            value = fn(value)
-        return value
+            v = fn(v)
+        return v
 
     def get_str(self, key: str) -> str:
         """Method to retrieve data from Redis and convert it to string."""
@@ -87,9 +87,9 @@ class Cache:
 
     def get_int(self, key: str) -> int:
         """Method to retrieve data from Redis and convert it to integer."""
-        value = self._redis.get(key)
+        v = self._redis.get(key)
         try:
-            value = int(value.decode("utf-8"))
+            v = int(v.decode("utf-8"))
         except Exception:
-            value = 0
-        return value
+            v = 0
+        return v
